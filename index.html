@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Plotnik</title>
+</head>
+<body>
+    <h1>Plotnik</h1>
+    <p>A plot reference tool</p>
+    <canvas id="canvas" width=200 height=200></canvas>
+    <fieldset>
+        <legend>Inputs</legend>
+        <button class="input" onclick="render();">Render plot</button>
+        <p>Plot equation: <input class="input" type="text" id="leftHand" size=10> = <input class="input" type="text" id="rightHand" size=10></p>
+        <button class="input" onclick="addUservar();">Add a custom variable</button>
+        <div id="uservars">
+            <p>(x and y are reserved)</p>
+        </div>
+    </fieldset>
+    <script>
+let canvas=getElem("canvas");
+let c=canvas.getContext("2d");
+let compData={
+    width: +(canvas.width),
+    height: +(canvas.height),
+    scale: 100/7.5, xScale: 20, yScale: 20,
+    steps: 200, xSteps: 100, ySteps: 100,
+    maxVariation: 0.2,
+    leftHand: "",
+    rightHand: ""
+};
+let uservars=[];
+drawAxes();
+// Functions
+function getElem(id) {
+    return document.getElementById(id);
+}
+function addUservar() {
+    let uservarParagraph = document.createElement("p");
+    let uservarName = document.createElement("input");
+    uservarName.type="text";
+    uservarName.size=2;
+    uservarName.className="input";
+    let uservarValue = document.createElement("input");
+    uservarValue.type=/*"range" - sorry, no ranges, it's too laggy already*/"text";
+    uservarValue.className="input";
+    uservars.push([uservarName,uservarValue]);
+    uservarParagraph.append(uservarName," = ",uservarValue);
+    getElem("uservars").append(uservarParagraph);
+}
+function fetch() {
+    compData.width=+canvas.width;
+    compData.height=+canvas.height;
+    compData.xScale=compData.yScale=compData.scale;
+    compData.xSteps=compData.ySteps=compData.steps;
+    compData.leftHand=parse(getElem("leftHand").value);
+    compData.rightHand=parse(getElem("rightHand").value);
+}
+function parse(expression) {
+    uservars.forEach(pair=>{
+        if (pair[0].value) {
+            if (!pair[1].value) pair[1].value=0; // huh, it replaces the value in the form
+            expression=expression.replace(pair[0].value,"("+pair[1].value+")")
+        }
+    });
+    let misspellings =[
+        ["^", "**"],
+        ["pi", "Math.PI"]
+    ];
+    misspellings.forEach(pair=>expression=expression.replace(pair[0],pair[1]));
+    return expression;
+}
+function computeExpression(expression) {
+    let out=NaN;
+    try {
+        out=eval(expression);
+    } catch (e) {/*lmao*/}
+    return out;
+}
+function testHands(leftHand, rightHand, x, y) {
+    leftHand=leftHand.replace("x", "("+x+")");
+    leftHand=leftHand.replace("y", "("+y+")");
+    rightHand=rightHand.replace("x", "("+x+")");
+    rightHand=rightHand.replace("y", "("+y+")");
+    return computeExpression(leftHand)-computeExpression(rightHand);
+}
+function drawAxes() {
+    c.strokeStyle="#00000080";
+    c.lineWidth=1;
+    c.beginPath();
+    c.moveTo(0,compData.height/2);
+    c.lineTo(compData.width, compData.height/2);
+    c.stroke();
+    c.beginPath();
+    c.moveTo(compData.width/2, 0);
+    c.lineTo(compData.width/2, compData.height);
+    c.stroke()
+}
+function render() {
+    fetch();
+    c.clearRect(0,0,compData.width,compData.height);
+    drawAxes();
+    c.fillStyle="#000";
+    [].forEach.call(document.getElementsByClassName("input"),elem=>elem.disabled=true);
+    for (let x=(-compData.width/2)/compData.xScale; x<=compData.width/2/compData.xScale; x+=compData.width/compData.xScale/compData.xSteps) { // uh oh
+        for (let y=(-compData.height/2)/compData.yScale; y<=compData.height/2/compData.yScale; y+=compData.height/compData.yScale/compData.ySteps) { // uHH oh
+            let variation=testHands(compData.leftHand, compData.rightHand, x, y);
+            if (isNaN(variation)) continue;
+            else if (Math.abs(variation)<=compData.maxVariation) {
+                c.fillRect(
+                    (x*compData.xScale) + (compData.width/2) - (compData.width/compData.xSteps/2),
+                    (-y*compData.yScale) + (compData.height/2) - (compData.height/compData.ySteps/2),
+                    compData.width/compData.xSteps,
+                    compData.height/compData.ySteps
+                );
+            }
+        }
+    }
+    [].forEach.call(document.getElementsByClassName("input"),elem=>elem.disabled=false);
+}
+    </script>
+</body>
+</html>
