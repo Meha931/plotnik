@@ -60,14 +60,14 @@ function parse(expression) {
     uservars.forEach(pair=>{
         if (pair[0].value) {
             if (!pair[1].value) pair[1].value=0; // huh, it replaces the value in the form
-            expression=expression.replace(pair[0].value,"("+pair[1].value+")")
+            expression=expression.replaceAll(pair[0].value,"("+pair[1].value+")")
         }
     });
     let misspellings =[
         ["^", "**"],
         ["pi", "Math.PI"]
     ];
-    misspellings.forEach(pair=>expression=expression.replace(pair[0],pair[1]));
+    misspellings.forEach(pair=>expression=expression.replaceAll(pair[0],pair[1]));
     return expression;
 }
 function computeExpression(expression) {
@@ -78,10 +78,10 @@ function computeExpression(expression) {
     return out;
 }
 function testHands(leftHand, rightHand, x, y) {
-    leftHand=leftHand.replace("x", "("+x+")");
-    leftHand=leftHand.replace("y", "("+y+")");
-    rightHand=rightHand.replace("x", "("+x+")");
-    rightHand=rightHand.replace("y", "("+y+")");
+    leftHand=leftHand.replaceAll("x", "("+x+")");
+    leftHand=leftHand.replaceAll("y", "("+y+")");
+    rightHand=rightHand.replaceAll("x", "("+x+")");
+    rightHand=rightHand.replaceAll("y", "("+y+")");
     return computeExpression(leftHand)-computeExpression(rightHand);
 }
 function drawAxes() {
